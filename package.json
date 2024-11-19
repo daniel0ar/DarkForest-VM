@@ -1,0 +1,12 @@
+{
+  "name": "dark-forest-vm",
+  "version": "0.0.1",
+  "description": "A general purpose minimal implementation of the Dark Forest game (zkga.me) to run on zkVMs like RISC Zero. ",
+  "main": "frontend/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["zkVM", "zk", "dark-forest", "rust", "risc0"],
+  "author": "Daniel Arroyo (daniel0ar)",
+  "license": "MIT"
+}
