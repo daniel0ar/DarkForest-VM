@@ -16,19 +16,41 @@ use risc0_zkvm::guest::env;
 
 fn main() {
     // Load inputs from the environment
-    let old_state: [u8; 32] = env::read(); // Player's committed state
-    let action: [u8; 32] = env::read();    // Encoded action (e.g., attack, move)
+    let village_id: u32 = env::read();
+    let current_energy: u32 = env::read();
+    let current_defense: u32 = env::read();
+    let owner: String = env::read();
+    let action: String = env::read(); // e.g., "attack" or "reinforce"
+    let action_energy: u32 = env::read();
 
-    // Compute the new state deterministically
-    let mut new_state = old_state;
-    for (i, byte) in action.iter().enumerate() {
-        new_state[i % 32] ^= byte; // Simple state transition logic
+    // Compute the new state based on the action
+    let mut new_energy = current_energy;
+    let mut new_defense = current_defense;
+    let mut new_owner = owner.clone();
+
+    match action.as_str() {
+        "attack" => {
+            if action_energy > current_defense {
+                new_energy = action_energy - current_defense;
+                new_defense = 0;
+                new_owner = "new_player".to_string(); // TODO: replace with new owner address
+            } else {
+                new_defense -= action_energy;
+            }
+        }
+        "reinforce" => {
+            new_energy += action_energy;
+        }
+        _ => {}
     }
 
     // Prove correctness of the computation
     // risc0_zkvm::prove(new_state);
     
     // Write the new state to the environment (for proof generation)
-    env::commit(&new_state);
+    env::write(village_id);
+    env::write(new_energy);
+    env::write(new_defense);
+    env::write(new_owner);
 }
 
