@@ -2,10 +2,10 @@
 pragma solidity ^0.8.20;
 
 contract DarkForest {
-    struct Planet {
+    struct Village {
+        uint256 energy;
+        uint256 defense;
         address owner;
-        uint256 resources;
-        bool discovered;
     }
 
     struct Player {
@@ -14,10 +14,19 @@ contract DarkForest {
     }
 
     mapping(address => Player) public players;
-    mapping(bytes32 => Planet) public planets;
+    mapping(uint256 => Village) public villages; // Mapping of village ID to its state
+    address public zkVerifier; // Address of the ZK verifier
+    uint256 public totalVillages;
 
     event PlayerRegistered(address indexed player);
-    event MoveSubmitted(address indexed player, bytes32 newStateRoot);
+    event VillageConquered(uint256 villageId, address owner);
+    event VillageUpdated(uint256 villageId, uint256 energy, uint256 defense, address owner);
+
+    constructor(uint256 _totalVillages, address _zkVerifier) {
+        totalVillages = _totalVillages;
+        zkVerifier = _zkVerifier;
+    }
+
 
     function registerPlayer(bytes32 initialStateRoot) external {
         require(!players[msg.sender].registered, "Already registered");
@@ -28,14 +37,24 @@ contract DarkForest {
         emit PlayerRegistered(msg.sender);
     }
 
-    function submitMove(bytes memory proof, bytes32 newStateRoot) external {
-        require(players[msg.sender].registered, "Player not registered");
+    function updateVillageState(
+        uint256 villageId,
+        uint256 newEnergy,
+        uint256 newDefense,
+        address newOwner,
+        bytes memory zkProof
+    ) external {
+        require(villageId < totalVillages, "Invalid village ID");
 
-        // RISC Zero proof verification
-        require(verifyProof(proof), "Invalid proof");
+        // Verify ZK Proof
+        require(verifyProof(zkProof), "Invalid proof");
 
-        players[msg.sender].stateRoot = newStateRoot;
-        emit MoveSubmitted(msg.sender, newStateRoot);
+        // Update village state
+        villages[villageId].energy = newEnergy;
+        villages[villageId].defense = newDefense;
+        villages[villageId].owner = newOwner;
+
+        emit VillageUpdated(villageId, newEnergy, newDefense, newOwner);
     }
 
     function verifyProof(bytes memory proof) internal pure returns (bool) {
