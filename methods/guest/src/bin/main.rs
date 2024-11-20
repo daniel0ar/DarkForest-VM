@@ -15,13 +15,20 @@
 use risc0_zkvm::guest::env;
 
 fn main() {
-    // Load player’s private state and inputs
-    let private_state = load_private_state();
-    let action = load_action();
+    // Load inputs from the environment
+    let old_state: [u8; 32] = env::read(); // Player's committed state
+    let action: [u8; 32] = env::read();    // Encoded action (e.g., attack, move)
 
-    // Compute the new game state
-    let new_state = compute_new_state(private_state, action);
+    // Compute the new state deterministically
+    let mut new_state = old_state;
+    for (i, byte) in action.iter().enumerate() {
+        new_state[i % 32] ^= byte; // Simple state transition logic
+    }
 
     // Prove correctness of the computation
-    risc0_zkvm::prove(new_state);
+    // risc0_zkvm::prove(new_state);
+    
+    // Write the new state to the environment (for proof generation)
+    env::commit(&new_state);
 }
+
